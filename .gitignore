@@ -1,0 +1,6 @@
+*.sw*
+
+/bin/*.elf
+/build/*.o
+
+Session.vim
