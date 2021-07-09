@@ -2,5 +2,6 @@
 
 /bin/*.elf
 /build/*.o
+/build/*.hex
 
 Session.vim

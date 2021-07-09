@@ -5,7 +5,6 @@ OBJ_ARG = -O ihex -R .eeprom
 NAME    = fseroboto
 STDLIB  =
 
-INCDIR  = include
 LIBDIR  = lib
 OBJDIR  = build
 SRCDIR  = src
@@ -16,9 +15,9 @@ DUDEARG = -b 115200 -c arduino -D -p atmega328p
 DEVPORT = /dev/ttyACM0
 OBJHEX	= $(NAME).hex
 
-HEADER  =
-OBJ     = fseroboto.o
-DEPS    = $(patsubst %, $(INCDIR)/%,$(HEADER))
+HEADER  = serial.h
+OBJ     = fseroboto.o serial.o
+DEPS    = $(patsubst %, $(SRCDIR)/%,$(HEADER))
 BIN     = $(patsubst %, $(OBJDIR)/%,$(OBJ))
 HEX		= $(patsubst %, $(OBJDIR)/%,$(OBJHEX))
 
@@ -36,7 +35,7 @@ $(OBJDIR)/$(NAME).hex: $(BINDIR)/$(NAME).elf
 all: $(DEPS) $(BINDIR) $(HEX)
 
 clean:
-	@rm -f $(OBJDIR)/*.o *~ core $(INCDIR)/*~
+	@rm -f $(OBJDIR)/*.o *~ core $(SRCDIR)/*~
 	@rm -f $(BINDIR)/*.elf
 	@rm -f $(OBJDIR)/*.hex
 	
