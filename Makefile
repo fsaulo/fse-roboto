@@ -1,6 +1,6 @@
 AVR_GCC = avr-gcc
 AVR_OBJ = avr-objcopy
-GCC_ARG = -Wall -Os -mmcu=atmega328p
+GCC_ARG = -Wall -Os -mmcu=atmega328p -g
 OBJ_ARG = -O ihex -R .eeprom
 NAME    = fseroboto
 STDLIB  =
