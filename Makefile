@@ -40,4 +40,4 @@ clean:
 	@rm -f $(OBJDIR)/*.hex
 	
 burn: $(HEX)
-	$(AVRDUDE) $(DUDEARG) -P $(DEVPORT) -U flash:w:$(OBJHEX)
+	$(AVRDUDE) $(DUDEARG) -P $(DEVPORT) -U flash:w:$(OBJDIR)/$(OBJHEX)
