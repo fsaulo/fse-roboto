@@ -9,22 +9,24 @@
 
 int main() {
 
-#define RXPWM  (PD5)
-#define PWMOUT (PB1)
-#define RXPIN  ((1 << PD5) & PIND) >> PIND5
+#define TOPCT2 255
+#define RXPWM   (PD5)
+#define PWM1OUT (PB1)
+#define PWM2OUT (PB2)
+#define RXPIN   ((1 << PD5) & PIND) >> PIND5
 
 enum { LOW, HIGH };
 
 void
 ioinit () {
     DDRD = _BV(PD3);
-    DDRB = _BV(PWMOUT);
+    DDRB = _BV(PWM1OUT) | _BV(PWM2OUT);
 
     /* Enable Timer1 as fast PWM controlled by ICR1 */
-    TCCR1A = _BV(COM1A1) | _BV(COM1A0) | _BV(WGM11);
+    TCCR1A = _BV(COM1A1) | _BV(COM1A0) | _BV(COM1B1) | _BV(COM1B0) | _BV(WGM11);
     TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS12); 
-    ICR1 = 255;
-    OCR1A = 0;
+    ICR1 = TOPCT2;
+    OCR1A = OCR1B = 0;
 
     TCCR2B = _BV(CS22);
 
@@ -60,7 +62,7 @@ ISR (PCINT2_vect) {
     uint16_t RFPWM;
 
     if (state == LOW) {
-        RFPWM = (TCNT2) <= 255 ? 255 - TCNT2: 0;
-        OCR1A = RFPWM;
+        RFPWM = (TCNT2) <= TOPCT2 ? TOPCT2 - TCNT2: 0;
+        OCR1A = OCR1B = RFPWM;
     } else TCNT2 = 0;
 }
