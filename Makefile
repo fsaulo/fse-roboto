@@ -1,6 +1,9 @@
+MMCU    = atmega328p
+FOSC	= 115200
+
 AVR_GCC = avr-gcc
 AVR_OBJ = avr-objcopy
-GCC_ARG = -Wall -Os -mmcu=atmega328p -g
+GCC_ARG = -Wall -Os -mmcu=$(MMCU) -g
 OBJ_ARG = -O ihex -R .eeprom
 NAME    = fseroboto
 STDLIB  =
@@ -11,7 +14,7 @@ SRCDIR  = src
 BINDIR  = bin
 
 AVRDUDE = avrdude
-DUDEARG = -b 115200 -c arduino -D -p atmega328p
+DUDEARG = -b $(FOSC) -c arduino -D -p $(MMCU)
 DEVPORT = /dev/ttyACM0
 OBJHEX	= $(NAME).hex
 
@@ -33,6 +36,8 @@ $(OBJDIR)/$(NAME).hex: $(BINDIR)/$(NAME).elf
 .PHONY: clean
 
 all: $(DEPS) $(BINDIR) $(HEX)
+
+hex: $(HEX)
 
 clean:
 	@rm -f $(OBJDIR)/*.o *~ core $(SRCDIR)/*~
