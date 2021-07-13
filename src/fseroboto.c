@@ -1,5 +1,6 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/cpufunc.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,24 +64,62 @@ ioinit () {
     stdin  = &SERIALIN;
     stdout = &SERIALOUT;
 
-    /* Enable global interrupt flag */
+    POSCNT = 0;
+    RF1CNT = 0;
+    RF2CNT = 0;
+    RF3PWM = 0;
+
+    RXSTR.CH3 = HIGH;
+
     sei();
 }
 
 int 
 main () {
-    /* I/O handler */
     ioinit();
-    
-    for (;;);
+
+    for (;;); 
 }
 
-ISR (PCINT2_vect) {
-    uint8_t state = RXPIN == 0 ? LOW : HIGH;
-    uint16_t RFPWM;
+ISR (TIMER0_COMPA_vect) {
+    volatile uint8_t index = 0;
+    volatile uint16_t sigch3aux_vect[FILTER_LENGTH];
+    POSCNT += 1;
+    
+    if (RX3PIN == LOW && RXSTR.CH3 == LOW) {
+        /* No change, no operation*/
+        _NOP();
+    } else if ((RX3PIN == HIGH && RXSTR.CH3 == LOW) || RX3PIN == RXSTR.CH3) {
+        /* Rising edge, do something [start counting] */
+        RF3CNT += 2;
+        RXSTR.CH3 = RX3PIN;
+    } else if (RX3PIN != RXSTR.CH3) {
+        /* Falling edge, stop counting, store value */
+        RXSTR.CH3 = RX3PIN;
+    }
+    
+    if (POSCNT == TOPPOSC) {
+        /* Here we perform a frequency division followed by a simple moving */
+        /* average filtering */
+        if (index < FILTER_LENGTH) {
+            sigch3aux_vect[index] = RF3CNT;
+            index++;
+        } else {
+            index = 0;
+        }
+        
+        /* After filtering the variables are used to set the PWM duty cycle */
+        /* This determines the output speed of the DC motors */
+        for (index = 0; index < FILTER_LENGTH; index++)
+            RF3CNT += 2.3 * sigch3aux_vect[index];
+        RF3CNT = 210 - (RF3CNT / FILTER_LENGTH); /* Full speed happens when RFCNT=0 */
 
-    if (state == LOW) {
-        RFPWM = (TCNT2) <= TOPCT2 ? TOPCT2 - TCNT2: 0;
-        OCR1A = OCR1B = RFPWM;
-    } else TCNT2 = 0;
+        OCR1A = RF3CNT & 0xFF;
+
+        PORTD ^= _BV (PD7);
+
+        /* End of clock cycle. Clear timing variable */
+        POSCNT = 0;
+        RF3CNT = 0;
+    }
 }
