@@ -50,25 +50,16 @@ ioinit () {
     TIMSK0 = _BV (OCIE0A);
 
     /* Enable Timer1 as fast PWM controlled by ICR1 */
-    TCCR1A = _BV(COM1A1) | _BV(COM1A0) | _BV(COM1B1) | _BV(COM1B0) | _BV(WGM11);
-    TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS12); 
+    TCCR1A = _BV (COM1A1) | _BV (COM1A0) | _BV (COM1B1) | _BV (COM1B0) | _BV (WGM11);
+    TCCR1B = _BV (WGM13) | _BV (WGM12) | _BV (CS10); 
+
     ICR1 = TOPCT2;
     OCR1A = OCR1B = 0;
 
-    TCCR2B = _BV(CS22);
+    TCCR2B = _BV (CS22);
 
-    /* Enable external interrupt by pin change */
-    EICRA  = _BV(ISC10);
-    EIMSK  = _BV(INT1);
-
-    /* Listening for toggle states on PD5 port */
-    PCICR  = _BV(PCIE2);
-    PCMSK2 = _BV(PCINT21);
-
-    /* Init serial monitor registers */
     serial_init();
 
-    /* Redirect stdin/stdiout to serial port */
     stdin  = &SERIALIN;
     stdout = &SERIALOUT;
 
