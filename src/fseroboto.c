@@ -42,7 +42,8 @@ volatile uint32_t RF3CNT;
 void
 ioinit () {
     DDRB = _BV (PWM1OUT) | _BV (PWM2OUT);
-    DDRD = _BV (PD7);
+    /* DDRD = _BV (PD7); */
+    /* DDRB = _BV (PB0); */
 
     TCCR0A = _BV (WGM01);
     TCCR0B = _BV (CS00);
@@ -105,7 +106,7 @@ tune_in_ch2() {
         _NOP();
     } else if ((RX2PIN == HIGH && RXSTR.CH2 == LOW) || RX2PIN == RXSTR.CH2) {
         /* Rising edge, do something [start counting] */
-        RF2CNT += 2;
+        RF2CNT += 1;
         RXSTR.CH2 = RX2PIN;
     } else if (RX2PIN != RXSTR.CH2) {
         /* Falling edge, stop counting, store value */
@@ -155,12 +156,31 @@ ISR (TIMER0_COMPA_vect) {
         for (index = 0; index < FILTER_LENGTH; index++) {
             RF1CNT += 0.9 * sigch1aux_vect[index];
             RF2CNT += 1.3 * sigch2aux_vect[index];
-            RF3CNT += 1.9 * sigch3aux_vect[index];
+            RF3CNT += 2.4 * sigch3aux_vect[index];
         }
 
-        OCR1A = RF3CNT & 0xFF;
+        RF1CNT = (210 - (RF1CNT / (FILTER_LENGTH+1))) & 0xFF; /* Full speed happens when RFCNT=0 */
+        RF2CNT = ((RF2CNT / (FILTER_LENGTH+1))) & 0x1F4; /* Full speed happens when RFCNT=0 */
+        RF3CNT = ~(140 - (RF3CNT / (FILTER_LENGTH+1))) & 0xFF; /* Full speed happens when RFCNT=0 */
 
-        PORTD ^= _BV (PD7);
+        if (RF2CNT > 45 && RF2CNT < 60) {
+            TCCR1A &= 0b11;
+            PORTB &= ~(1 << PB1);
+            PORTB &= ~(1 << PB2);
+            OCR1A = OCR1B = 0;
+        } else if (RF2CNT > 70) {
+            TCCR1A &= 0b11;
+            TCCR1A = _BV (COM1A0) | _BV (COM1A1);
+            OCR1A = 0;
+        } else if (RF2CNT < 30) {
+            TCCR1A &= 0b11;
+            TCCR1A = _BV (COM1B0) | _BV (COM1B1);
+            OCR1A = 0;
+        }
+
+        OCR1A = RF3CNT;
+        OCR1B = RF3CNT;
+
 
         /* End of clock cycle. Clear timing variable */
         POSCNT = RF3CNT = RF2CNT = 0;
