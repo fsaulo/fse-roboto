@@ -23,6 +23,21 @@
 
 enum { LOW, HIGH };
 
+typedef struct {
+    uint8_t CH1;
+    uint8_t CH2;
+    uint8_t CH3;
+    uint8_t CH4;
+} receiver;
+
+volatile receiver RXSTR;
+
+volatile uint32_t POSCNT;
+volatile uint32_t RF3PWM;
+volatile uint32_t RF1CNT;
+volatile uint32_t RF2CNT;
+volatile uint32_t RF3CNT;
+
 void
 ioinit () {
     DDRD = _BV(PD3);
