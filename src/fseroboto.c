@@ -9,8 +9,8 @@
 #include "serial.h"
 
 #define FILTER_LENGTH (5)
-#define TOPCT2        (0x00FF)
-#define TOPPOSC       (0x029A)
+#define TOPCT2  (0x00FF)
+#define TOPPOSC (0x029A)
 
 #define RXPWM   (PD5)
 #define PWM1OUT (PB1)
@@ -42,8 +42,6 @@ volatile uint32_t RF3CNT;
 void
 ioinit () {
     DDRB = _BV (PWM1OUT) | _BV (PWM2OUT);
-    /* DDRD = _BV (PD7); */
-    /* DDRB = _BV (PB0); */
 
     TCCR0A = _BV (WGM01);
     TCCR0B = _BV (CS00);
@@ -102,14 +100,11 @@ tune_in_ch1() {
 void
 tune_in_ch2() {
     if (RX2PIN == LOW && RXSTR.CH2 == LOW) {
-        /* No change, no operation*/
         _NOP();
     } else if ((RX2PIN == HIGH && RXSTR.CH2 == LOW) || RX2PIN == RXSTR.CH2) {
-        /* Rising edge, do something [start counting] */
         RF2CNT += 1;
         RXSTR.CH2 = RX2PIN;
     } else if (RX2PIN != RXSTR.CH2) {
-        /* Falling edge, stop counting, store value */
         RXSTR.CH2 = RX2PIN;
     }
 }
@@ -117,14 +112,11 @@ tune_in_ch2() {
 void
 tune_in_ch3() {
     if (RX3PIN == LOW && RXSTR.CH3 == LOW) {
-        /* No change, no operation*/
         _NOP();
     } else if ((RX3PIN == HIGH && RXSTR.CH3 == LOW) || RX3PIN == RXSTR.CH3) {
-        /* Rising edge, do something [start counting] */
         RF3CNT += 2;
         RXSTR.CH3 = RX3PIN;
     } else if (RX3PIN != RXSTR.CH3) {
-        /* Falling edge, stop counting, store value */
         RXSTR.CH3 = RX3PIN;
     }
 }
@@ -159,9 +151,9 @@ ISR (TIMER0_COMPA_vect) {
             RF3CNT += 2.4 * sigch3aux_vect[index];
         }
 
-        RF1CNT = (210 - (RF1CNT / (FILTER_LENGTH+1))) & 0xFF; /* Full speed happens when RFCNT=0 */
-        RF2CNT = ((RF2CNT / (FILTER_LENGTH+1))) & 0x1F4; /* Full speed happens when RFCNT=0 */
-        RF3CNT = ~(140 - (RF3CNT / (FILTER_LENGTH+1))) & 0xFF; /* Full speed happens when RFCNT=0 */
+        RF1CNT = (210 - (RF1CNT / (FILTER_LENGTH+1))) & 0xFF; 
+        RF2CNT = ((RF2CNT / (FILTER_LENGTH+1))) & 0x1F4;      
+        RF3CNT = ~(140 - (RF3CNT / (FILTER_LENGTH+1))) & 0xFF;
 
         if (RF2CNT > 45 && RF2CNT < 60) {
             TCCR1A &= 0b11;
