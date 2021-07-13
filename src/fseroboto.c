@@ -7,13 +7,19 @@
 
 #include "serial.h"
 
-int main() {
+#define FILTER_LENGTH (5)
+#define TOPCT2        (0x00FF)
+#define TOPPOSC       (0x029A)
 
-#define TOPCT2 255
 #define RXPWM   (PD5)
 #define PWM1OUT (PB1)
 #define PWM2OUT (PB2)
-#define RXPIN   ((1 << PD5) & PIND) >> PIND5
+
+#define RX1PIN  ((1 << PD6) & PIND) >> PIND6 == 0 ? LOW : HIGH
+#define RX2PIN  ((1 << PD3) & PIND) >> PIND3 == 0 ? LOW : HIGH
+#define RX3PIN  ((1 << PD5) & PIND) >> PIND5 == 0 ? LOW : HIGH
+#define RX4PIN  ((1 << PB3) & PIND) >> PINB3 == 0 ? LOW : HIGH
+
 
 enum { LOW, HIGH };
 
