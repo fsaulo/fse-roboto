@@ -40,8 +40,14 @@ volatile uint32_t RF3CNT;
 
 void
 ioinit () {
-    DDRD = _BV(PD3);
-    DDRB = _BV(PWM1OUT) | _BV(PWM2OUT);
+    DDRB = _BV (PWM1OUT) | _BV (PWM2OUT);
+    DDRD = _BV (PD7);
+
+    TCCR0A = _BV (WGM01);
+    TCCR0B = _BV (CS01);
+
+    OCR0A = 9;
+    TIMSK0 = _BV (OCIE0A);
 
     /* Enable Timer1 as fast PWM controlled by ICR1 */
     TCCR1A = _BV(COM1A1) | _BV(COM1A0) | _BV(COM1B1) | _BV(COM1B0) | _BV(WGM11);
