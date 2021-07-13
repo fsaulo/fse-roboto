@@ -45,9 +45,9 @@ ioinit () {
     DDRD = _BV (PD7);
 
     TCCR0A = _BV (WGM01);
-    TCCR0B = _BV (CS01);
+    TCCR0B = _BV (CS00);
 
-    OCR0A = 9;
+    OCR0A = 1;
     TIMSK0 = _BV (OCIE0A);
 
     /* Enable Timer1 as fast PWM controlled by ICR1 */
@@ -70,6 +70,8 @@ ioinit () {
     RF3PWM = 0;
 
     RXSTR.CH3 = HIGH;
+    RXSTR.CH2 = HIGH;
+    RXSTR.CH1 = HIGH;
 
     sei();
 }
@@ -81,11 +83,38 @@ main () {
     for (;;); 
 }
 
-ISR (TIMER0_COMPA_vect) {
-    volatile uint8_t index = 0;
-    volatile uint16_t sigch3aux_vect[FILTER_LENGTH];
-    POSCNT += 1;
-    
+void
+tune_in_ch1() {
+    if (RX1PIN == LOW && RXSTR.CH1 == LOW) {
+        /* No change, no operation*/
+        _NOP();
+    } else if ((RX1PIN == HIGH && RXSTR.CH1 == LOW) || RX1PIN == RXSTR.CH1) {
+        /* Rising edge, do something [start counting] */
+        RF1CNT += 2;
+        RXSTR.CH1 = RX1PIN;
+    } else if (RX1PIN != RXSTR.CH1) {
+        /* Falling edge, stop counting, store value */
+        RXSTR.CH1 = RX1PIN;
+    }
+}
+
+void
+tune_in_ch2() {
+    if (RX2PIN == LOW && RXSTR.CH2 == LOW) {
+        /* No change, no operation*/
+        _NOP();
+    } else if ((RX2PIN == HIGH && RXSTR.CH2 == LOW) || RX2PIN == RXSTR.CH2) {
+        /* Rising edge, do something [start counting] */
+        RF2CNT += 2;
+        RXSTR.CH2 = RX2PIN;
+    } else if (RX2PIN != RXSTR.CH2) {
+        /* Falling edge, stop counting, store value */
+        RXSTR.CH2 = RX2PIN;
+    }
+}
+
+void
+tune_in_ch3() {
     if (RX3PIN == LOW && RXSTR.CH3 == LOW) {
         /* No change, no operation*/
         _NOP();
@@ -97,12 +126,25 @@ ISR (TIMER0_COMPA_vect) {
         /* Falling edge, stop counting, store value */
         RXSTR.CH3 = RX3PIN;
     }
+}
+
+ISR (TIMER0_COMPA_vect) {
+    volatile uint8_t index = 0;
+    volatile uint16_t sigch1aux_vect[FILTER_LENGTH];
+    volatile uint16_t sigch2aux_vect[FILTER_LENGTH];
+    volatile uint16_t sigch3aux_vect[FILTER_LENGTH];
+
+    tune_in_ch1();
+    tune_in_ch2();
+    tune_in_ch3();
     
     if (POSCNT == TOPPOSC) {
         /* Here we perform a frequency division followed by a simple moving */
         /* average filtering */
         if (index < FILTER_LENGTH) {
             sigch3aux_vect[index] = RF3CNT;
+            sigch2aux_vect[index] = RF2CNT;
+            sigch1aux_vect[index] = RF1CNT;
             index++;
         } else {
             index = 0;
@@ -110,16 +152,18 @@ ISR (TIMER0_COMPA_vect) {
         
         /* After filtering the variables are used to set the PWM duty cycle */
         /* This determines the output speed of the DC motors */
-        for (index = 0; index < FILTER_LENGTH; index++)
-            RF3CNT += 2.3 * sigch3aux_vect[index];
-        RF3CNT = 210 - (RF3CNT / FILTER_LENGTH); /* Full speed happens when RFCNT=0 */
+        for (index = 0; index < FILTER_LENGTH; index++) {
+            RF1CNT += 0.9 * sigch1aux_vect[index];
+            RF2CNT += 1.3 * sigch2aux_vect[index];
+            RF3CNT += 1.9 * sigch3aux_vect[index];
+        }
 
         OCR1A = RF3CNT & 0xFF;
 
         PORTD ^= _BV (PD7);
 
         /* End of clock cycle. Clear timing variable */
-        POSCNT = 0;
-        RF3CNT = 0;
+        POSCNT = RF3CNT = RF2CNT = 0;
     }
+    POSCNT += 1;
 }
