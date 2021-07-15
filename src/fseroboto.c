@@ -8,8 +8,7 @@
 
 #include "serial.h"
 
-#define OFFSET  (0x00A0)
-#define TOPCT2  (0x00FF)
+#define OFFSET  (0x0080)
 #define DTRES   (0x125)
 
 #define PWM1OUT (PB1)
